@@ -1,65 +1,73 @@
-const item = JSON.parse(localStorage.getItem("todoList")) || [];
+const backendUrl = "http://localhost:5000";
 
-const todoList = item;
+async function renderTodoList() {
+  try {
+    const response = await fetch(`${backendUrl}/api/todos`);
+    if (!response.ok) {
+      throw new Error("Failed to fetch todos");
+    }
+    const todos = await response.json();
+    let todoListHTML = "";
 
-renderTodoList();
+    todos.forEach((todo) => {
+      const { name, dueDate, _id } = todo;
+      const html = `
+        <div>${name}</div>
+        <div>${dueDate}</div>
+        <button onclick="deleteTodo('${_id}')" class="delete-todo-button item-${_id}">Delete</button>
+      `;
+      todoListHTML += html;
+    });
 
-console.log(item);
-
-function renderTodoList() {
-  let todoListHTML = "";
-
-  item.forEach(function (todoObject, index) {
-    const { name, dueDate, id } = todoObject;
-    const html = `
-      <div>${name}</div>
-      <div>${dueDate}</div>
-      <button onclick="
-      todoList.splice(${index}, 1);
-      renderTodoList();
-      deleteItemStorage(${id});
-      "class="delete-todo-button item-${id}" >Delete</button> 
-    `;
-    todoListHTML += html;
-  });
-  document.querySelector(".js-todo-list").innerHTML = todoListHTML;
+    document.querySelector(".js-todo-list").innerHTML = todoListHTML;
+  } catch (error) {
+    console.error("Error rendering todo list:", error);
+  }
 }
 
-function addTodo() {
+async function addTodo() {
   const inputElement = document.querySelector(".js-name-input");
   const name = inputElement.value;
 
   const dateInputElement = document.querySelector(".js-due-date-input");
   const dueDate = dateInputElement.value;
 
-  const itemID = item.length;
+  try {
+    const response = await fetch(`${backendUrl}/api/todos`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ name, dueDate }),
+    });
 
-  item.push({
-    //name: name,
-    //dueDate: dueDate,
-    id: itemID,
-    name,
-    dueDate,
-  });
+    if (!response.ok) {
+      throw new Error("Failed to add todo");
+    }
 
-  saveToStorage(item);
+    inputElement.value = "";
+    renderTodoList();
+  } catch (error) {
+    console.error("Error adding todo:", error);
+  }
+}
 
-  inputElement.value = "";
+async function deleteTodo(id) {
+  try {
+    const response = await fetch(`${backendUrl}/api/todos/${id}`, {
+      method: "DELETE",
+    });
 
+    if (!response.ok) {
+      throw new Error("Failed to delete todo");
+    }
+
+    renderTodoList();
+  } catch (error) {
+    console.error("Error deleting todo:", error);
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
   renderTodoList();
-}
-
-function deleteItemStorage(id) {
-  let newItems = [];
-
-  item.forEach(function (todo) {
-    newItems.push(todo);
-  });
-
-  saveToStorage(newItems);
-  console.log(newItems);
-}
-
-function saveToStorage(todoList) {
-  localStorage.setItem("todoList", JSON.stringify(todoList));
-}
+});

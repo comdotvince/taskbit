@@ -1,25 +1,21 @@
 body {
-  font-family: Arial;
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 20px;
 }
 
 .container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  max-width: 600px;
+  margin: 0 auto;
 }
 
-.todo-grid,
 .todo-input-grid {
   display: grid;
   grid-template-columns: 200px 150px 100px;
   column-gap: 10px;
   row-gap: 10px;
   align-items: center;
-}
-
-.todo-input-grid {
-  margin-bottom: 10px;
-  align-items: stretch;
+  margin-bottom: 20px;
 }
 
 .name-input,
@@ -33,7 +29,17 @@ body {
   color: white;
   border: none;
   font-size: 15px;
+  padding: 10px;
   cursor: pointer;
+}
+
+.todo-grid {
+  display: grid;
+  grid-template-columns: 200px 150px 100px;
+  column-gap: 10px;
+  row-gap: 10px;
+  align-items: center;
+  margin-bottom: 15px;
 }
 
 .delete-todo-button {
@@ -41,7 +47,6 @@ body {
   color: white;
   border: none;
   font-size: 15px;
+  padding: 10px;
   cursor: pointer;
-  padding-top: 10px;
-  padding-bottom: 10px;
 }

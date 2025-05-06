@@ -4,6 +4,25 @@ body {
   padding: 20px;
 }
 
+div {
+  white-space: normal; /* This allows text to wrap */
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.todo-text:focus {
+  border: none;
+  outline: none;
+}
+
+.todo-text {
+  text-align: center;
+}
+
+input[type="checkbox"] {
+  transform: scale(2); /* Increase size */
+  /* Optional spacing */
+}
 .container {
   max-width: 600px;
   margin: 0 auto;
@@ -24,6 +43,13 @@ body {
   padding: 6px;
 }
 
+.nunito-todo-text {
+  font-family: "Nunito", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 700;
+  font-style: normal;
+}
+
 .add-todo-button {
   background-color: green;
   color: white;
@@ -31,11 +57,12 @@ body {
   font-size: 15px;
   padding: 10px;
   cursor: pointer;
+  border-radius: 15px;
 }
 
 .todo-grid {
   display: grid;
-  grid-template-columns: 200px 150px 100px;
+  grid-template-columns: 50px 140px 150px 100px;
   column-gap: 10px;
   row-gap: 10px;
   align-items: center;
@@ -49,4 +76,13 @@ body {
   font-size: 15px;
   padding: 10px;
   cursor: pointer;
+  border-radius: 15px;
+}
+
+.todo-date {
+  text-align: center;
+}
+
+.line-through {
+  text-decoration: line-through;
 }

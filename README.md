@@ -24,3 +24,7 @@ git clone https://github.com/your/repo.git
 cd repo
 npm install
 ```
+
+## Screenshot
+
+![Todo List Screenshot](todo-list-web-app.png)

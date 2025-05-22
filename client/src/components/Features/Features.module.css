@@ -1,0 +1,45 @@
+/* src/components/Features/Features.module.css */
+.features {
+  padding: 80px 0;
+  background-color: white;
+}
+
+.sectionTitle {
+  text-align: center;
+  font-size: 36px;
+  margin-bottom: 60px;
+}
+
+.featuresGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+}
+
+.featureCard {
+  padding: 30px;
+  border-radius: 10px;
+  background-color: var(--light);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.featureCard:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+}
+
+.featureIcon {
+  font-size: 40px;
+  color: var(--primary);
+  margin-bottom: 20px;
+}
+
+.featureCard h3 {
+  font-size: 20px;
+  margin-bottom: 15px;
+}
+
+.featureCard p {
+  color: var(--gray);
+}

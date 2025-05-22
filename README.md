@@ -6,7 +6,7 @@ Simple Todo List on Web. This is a prerequisite for larger projects that I want 
 
 ## 🧰 Tech Stack
 
-- Frontend: Javascript / HTML / CSS
+- Frontend: React / Javascript / HTML / CSS
 - Backend: Node.js / Express / etc.
 - Database: MongoDB / etc.
 

@@ -1,5 +1,7 @@
 import { useState } from "react";
-import "./SignupPage.css"; // Assuming you have a CSS file for styling
+import { useNavigate, Link } from "react-router-dom";
+import { signup } from "../api/auth";
+import "./SignupPage.css";
 
 const SignUp = () => {
   const [formData, setFormData] = useState({
@@ -12,6 +14,7 @@ const SignUp = () => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -19,6 +22,13 @@ const SignUp = () => {
       ...formData,
       [name]: value,
     });
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors({
+        ...errors,
+        [name]: "",
+      });
+    }
   };
 
   const validateForm = () => {
@@ -26,18 +36,25 @@ const SignUp = () => {
 
     if (!formData.name.trim()) {
       newErrors.name = "Name is required";
+    } else if (formData.name.trim().length < 2) {
+      newErrors.name = "Name must be at least 2 characters";
     }
 
     if (!formData.email.trim()) {
       newErrors.email = "Email is required";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = "Email is invalid";
+      newErrors.email = "Please enter a valid email";
     }
 
     if (!formData.password) {
       newErrors.password = "Password is required";
     } else if (formData.password.length < 6) {
       newErrors.password = "Password must be at least 6 characters";
+    } else if (!/[A-Z]/.test(formData.password)) {
+      newErrors.password =
+        "Password must contain at least one uppercase letter";
+    } else if (!/[0-9]/.test(formData.password)) {
+      newErrors.password = "Password must contain at least one number";
     }
 
     if (formData.password !== formData.confirmPassword) {
@@ -53,14 +70,49 @@ const SignUp = () => {
 
     if (validateForm()) {
       setIsSubmitting(true);
+      setErrors({});
+      setSuccessMessage("");
 
-      // Simulate API call
       try {
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-        setSuccessMessage("Account created successfully! Redirecting...");
-        // Here you would typically redirect or handle the successful signup
+        const data = await signup({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+        });
+
+        setSuccessMessage(
+          "Account created successfully! Redirecting to login..."
+        );
+
+        // Store token if your API returns one
+        if (data.token) {
+          localStorage.setItem("authToken", data.token);
+        }
+
+        // Redirect to login after 2 seconds
+        setTimeout(() => {
+          navigate("/login");
+        }, 2000);
       } catch (error) {
-        setErrors({ error, api: "An error occurred during signup" });
+        console.error("Signup error:", error);
+
+        // Handle different error formats
+        if (error.response?.data?.errors) {
+          // Handle backend validation errors
+          const backendErrors = {};
+          error.response.data.errors.forEach((err) => {
+            backendErrors[err.path] = err.msg;
+          });
+          setErrors(backendErrors);
+        } else {
+          setErrors({
+            ...errors,
+            api:
+              error.response?.data?.message ||
+              error.message ||
+              "An error occurred during signup",
+          });
+        }
       } finally {
         setIsSubmitting(false);
       }
@@ -81,7 +133,7 @@ const SignUp = () => {
 
         {errors.api && <div className="error-message">{errors.api}</div>}
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} noValidate>
           <div className="form-group">
             <label htmlFor="name">Full Name</label>
             <input
@@ -92,6 +144,7 @@ const SignUp = () => {
               onChange={handleChange}
               className={errors.name ? "error" : ""}
               placeholder="Enter your full name"
+              disabled={isSubmitting}
             />
             {errors.name && <span className="error-text">{errors.name}</span>}
           </div>
@@ -106,6 +159,7 @@ const SignUp = () => {
               onChange={handleChange}
               className={errors.email ? "error" : ""}
               placeholder="Enter your email"
+              disabled={isSubmitting}
             />
             {errors.email && <span className="error-text">{errors.email}</span>}
           </div>
@@ -120,6 +174,7 @@ const SignUp = () => {
               onChange={handleChange}
               className={errors.password ? "error" : ""}
               placeholder="Create a password"
+              disabled={isSubmitting}
             />
             {errors.password && (
               <span className="error-text">{errors.password}</span>
@@ -136,6 +191,7 @@ const SignUp = () => {
               onChange={handleChange}
               className={errors.confirmPassword ? "error" : ""}
               placeholder="Confirm your password"
+              disabled={isSubmitting}
             />
             {errors.confirmPassword && (
               <span className="error-text">{errors.confirmPassword}</span>
@@ -147,17 +203,24 @@ const SignUp = () => {
             className="signup-button"
             disabled={isSubmitting}
           >
-            {isSubmitting ? "Creating Account..." : "Sign Up"}
+            {isSubmitting ? (
+              <>
+                <span className="spinner"></span> Creating Account...
+              </>
+            ) : (
+              "Sign Up"
+            )}
           </button>
         </form>
 
         <div className="login-link">
-          Already have an account? <a href="/login">Log in</a>
+          Already have an account? <Link to="/login">Log in</Link>
         </div>
 
         <div className="terms">
-          By signing up, you agree to our <a href="/terms">Terms of Service</a>{" "}
-          and <a href="/privacy">Privacy Policy</a>.
+          By signing up, you agree to our{" "}
+          <Link to="/terms">Terms of Service</Link> and{" "}
+          <Link to="/privacy">Privacy Policy</Link>.
         </div>
       </div>
     </div>

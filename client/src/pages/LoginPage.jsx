@@ -1,6 +1,9 @@
 // src/pages/LoginPage.jsx
 import React, { useState } from "react";
+import Cookies from "js-cookie";
+import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
+import { login } from "../api/auth";
 import "./LoginPage.css";
 
 const LoginPage = () => {
@@ -45,18 +48,52 @@ const LoginPage = () => {
 
     if (validateForm()) {
       setIsSubmitting(true);
+      setErrors({});
 
       try {
-        // Simulate API call - replace with actual authentication
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        const response = await login({
+          email: formData.email,
+          password: formData.password,
+        });
 
-        // Set auth token (in a real app, this would come from your API)
-        localStorage.setItem("authToken", "your-auth-token-here");
+        const { token, user } = response;
+        console.log("Login response:", response);
 
-        // Redirect to todo app
+        // Store token in cookie with expiration (7 days example)
+        Cookies.set("authToken", token, {
+          httpOnly: true,
+          expires: 7, // days
+          secure: import.meta.env.MODE === "production",
+          sameSite: "strict",
+        });
+
+        // Store user data in localStorage or context
+        localStorage.setItem("user", JSON.stringify(user));
+
+        // Set default authorization header for future requests
+        axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+
+        // Redirect to protected route
         navigate("/todos");
       } catch (error) {
-        setErrors({ error, api: "Invalid email or password" });
+        console.error("Login error:", error);
+
+        if (error.response) {
+          // Handle different error statuses
+          if (error.response.status === 401) {
+            setErrors({ api: "Invalid email or password" });
+          } else if (error.response.status === 429) {
+            setErrors({ api: "Too many attempts. Please try again later." });
+          } else {
+            setErrors({
+              api:
+                error.response.data?.message ||
+                "Login failed. Please try again.",
+            });
+          }
+        } else {
+          setErrors({ api: "Network error. Please check your connection." });
+        }
       } finally {
         setIsSubmitting(false);
       }

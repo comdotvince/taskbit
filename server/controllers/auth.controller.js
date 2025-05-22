@@ -3,38 +3,34 @@ import { User } from "../models/user.model.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 
-export const login = async (req, res) => {
-  try {
-    const { email, password } = req.body;
+export const login = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
 
-    // 1. Find user by email
-    const user = await User.findOne({ email });
-    if (!user)
-      return res.status(401).json({ error: "Invalid email or password" });
+  // 1. Find user by email
+  const user = await User.findOne({ email });
+  if (!user)
+    return res.status(401).json({ error: "Invalid email or password" });
 
-    // 2. Compare password
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch)
-      return res.status(401).json({ error: "Invalid email or password" });
+  // 2. Compare password
+  const isMatch = await user.comparePassword(password);
+  if (!isMatch)
+    return res.status(401).json({ error: "Invalid email or password" });
 
-    // 3. Generate JWT
-    const token = jwt.sign(
-      { _id: user._id, email: user.email },
-      process.env.JWT_SECRET,
-      { expiresIn: "1h" }
-    );
+  // 3. Generate JWT
+  const token = jwt.sign(
+    { _id: user._id, email: user.email },
+    process.env.JWT_SECRET,
+    { expiresIn: "1h" }
+  );
 
-    // 4. Send response
-    res.json({
-      token,
-      user: { id: user._id, email: user.email, name: user.name },
-    });
-  } catch (err) {
-    res.status(500).json({ error: "Login failed" });
-  }
-};
+  // 4. Send response
+  res.json({
+    token,
+    user: { id: user._id, email: user.email, name: user.name },
+  });
+});
 
-export const register = asyncHandler(async (req, res) => {
+export const signup = asyncHandler(async (req, res) => {
   const { email, password, name } = req.body;
 
   // Validate required fields
@@ -84,3 +80,12 @@ export const logout = (req, res) => {
 
   res.status(200).json({ message: "Logged out successfully" });
 };
+
+export const getProfile = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id).select("-password");
+  if (!user) {
+    res.status(404);
+    throw new Error("User not found");
+  }
+  res.json(user);
+});

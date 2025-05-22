@@ -17,7 +17,7 @@ const TodoApp = () => {
   useEffect(() => {
     const checkAuth = async () => {
       const token = localStorage.getItem("authToken");
-      if (token) {
+      if (!token) {
         navigate("/login");
       } else {
         // Simulate loading data

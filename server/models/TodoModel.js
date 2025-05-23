@@ -1,19 +1,23 @@
 import mongoose from "mongoose";
 
-const todoSchema = new mongoose.Schema({
-  title: {
-    type: String,
-    required: true,
+const todoSchema = new mongoose.Schema(
+  {
+    title: {
+      type: String,
+      required: true,
+    },
+    isCompleted: {
+      type: Boolean,
+      required: true,
+    },
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User", // Must match the name of your User model
+      required: true,
+    },
   },
-  dueDate: {
-    type: Date,
-    required: true,
-  },
-  isCompleted: {
-    type: Boolean,
-    required: true,
-  },
-});
+  { timestamps: true }
+);
 
 const Todo = mongoose.model("Todo", todoSchema);
 

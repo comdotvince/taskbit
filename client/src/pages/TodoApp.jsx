@@ -2,9 +2,11 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { verifyAuth } from "../api/auth.jsx"; // Adjust the import path as necessary
+import api from "../api/axios.jsx"; // Adjust the import path as necessary
 import profileLogo from "../assets/man.png"; // Adjust the import path as necessary
 import "./TodoApp.css";
 import Sidebar from "../components/Sidebar/Sidebar.jsx";
+import { v4 as uuidv4 } from "uuid";
 
 const TodoApp = () => {
   const [todos, setTodos] = useState([]);
@@ -23,44 +25,21 @@ const TodoApp = () => {
     const checkAuthAndLoadData = async () => {
       const authResult = await verifyAuth();
 
+      const user = JSON.parse(localStorage.getItem("user"));
+
+      console.log("User data:", user.id);
+
       if (!authResult) {
         navigate("/login");
       } else {
-        // Load sample data (kept in component)
-        setTimeout(() => {
-          setTodos([
-            { id: 1, text: "Learn React", completed: false },
-            { id: 2, text: "Build Todo App", completed: true },
-            { id: 3, text: "Deploy to production", completed: false },
-          ]);
-          setHabits([
-            {
-              id: 1,
-              name: "Drink water",
-              streak: 3,
-              lastCompleted: new Date(Date.now() - 86400000)
-                .toISOString()
-                .split("T")[0],
-              history: {
-                [new Date(Date.now() - 2 * 86400000)
-                  .toISOString()
-                  .split("T")[0]]: true,
-                [new Date(Date.now() - 86400000)
-                  .toISOString()
-                  .split("T")[0]]: true,
-                [new Date().toISOString().split("T")[0]]: true,
-              },
-            },
-            {
-              id: 2,
-              name: "Exercise",
-              streak: 0,
-              lastCompleted: null,
-              history: {},
-            },
-          ]);
-          setIsLoading(false);
-        }, 1000);
+        const res = await api.get("/todos", {
+          id: user.id,
+          withCredentials: true,
+        });
+
+        setTodos(res.data);
+
+        setIsLoading(false);
       }
     };
 
@@ -68,31 +47,104 @@ const TodoApp = () => {
   }, [navigate]);
 
   // Todo functions
-  const handleAddTodo = (e) => {
+  const handleAddTodo = async (e) => {
     e.preventDefault();
-    if (newTodo.trim()) {
+
+    if (!newTodo.trim()) return; // Don't proceed if empty
+    const user = JSON.parse(localStorage.getItem("user"));
+
+    try {
+      // Create the todo object
+      const todoData = {
+        _id: uuidv4(), // Generate a unique ID
+        title: newTodo.trim(),
+        isCompleted: false,
+        user: user.id,
+        // Add any other required fields from your backend
+      };
+
+      // Make POST request to your backend API
+      const response = await api.post("/todos", todoData, {
+        withCredentials: true,
+      });
+
+      // If successful, update the frontend state with the response data
       setTodos([
         ...todos,
-        {
-          id: Date.now(),
-          text: newTodo.trim(),
-          completed: false,
-        },
+        response.data, // Assuming your backend returns the created todo
       ]);
-      setNewTodo("");
+
+      setNewTodo(""); // Clear the input field
+    } catch (error) {
+      console.error("Error adding todo:", error);
+      // Handle error (show error message to user, etc.)
     }
   };
+  const handleToggleTodo = async (id) => {
+    const originalTodos = [...todos];
 
-  const handleToggleTodo = (id) => {
-    setTodos(
-      todos.map((todo) =>
-        todo.id === id ? { ...todo, completed: !todo.completed } : todo
-      )
-    );
+    try {
+      // Optimistic update
+      setTodos(
+        todos.map((todo) =>
+          todo._id === id ? { ...todo, isCompleted: !todo.isCompleted } : todo
+        )
+      );
+
+      // Try both endpoint styles
+      let response;
+      try {
+        // RESTful style
+        response = await api.patch(
+          `/todos/${id}`,
+          { isCompleted: !originalTodos.find((t) => t._id === id).isCompleted },
+          { withCredentials: true }
+        );
+      } catch (error) {
+        console.error(
+          "RESTful style failed, trying body parameter style:",
+          error
+        );
+        // Fallback to body parameter style
+        response = await api.patch(
+          "/todos",
+          {
+            id: id,
+            isCompleted: !originalTodos.find((t) => t._id === id).isCompleted,
+          },
+          { withCredentials: true }
+        );
+      }
+
+      // Verify response
+      if (!response.data || response.data._id !== id) {
+        throw new Error("Invalid server response");
+      }
+    } catch (error) {
+      console.error("Toggle failed:", error.response?.data || error.message);
+      setTodos(originalTodos);
+
+      alert(
+        error.response?.data?.error === "Item not found"
+          ? "Todo not found"
+          : "Failed to update status"
+      );
+    }
   };
+  const handleDeleteTodo = async (id) => {
+    try {
+      // OPTION 1: Standard RESTful approach (ID in URL)
+      await api.delete("/todos", {
+        data: { id },
+        withCredentials: true,
+      });
 
-  const handleDeleteTodo = (id) => {
-    setTodos(todos.filter((todo) => todo.id !== id));
+      // Update UI after successful deletion
+      setTodos(todos.filter((todo) => todo._id !== id));
+    } catch (error) {
+      console.error("Error deleting todo:", error);
+      // Handle error (show error message to user, etc.)
+    }
   };
 
   // Habit functions
@@ -143,12 +195,12 @@ const TodoApp = () => {
   };
 
   const filteredTodos = todos.filter((todo) => {
-    if (filter === "completed") return todo.completed;
-    if (filter === "active") return !todo.completed;
+    if (filter === "completed") return todo.isCompleted;
+    if (filter === "active") return !todo.isCompleted;
     return true;
   });
 
-  const remainingCount = todos.filter((todo) => !todo.completed).length;
+  const remainingCount = todos.filter((todo) => !todo.isCompleted).length;
 
   return (
     <div className="todo-app-container">
@@ -239,22 +291,22 @@ const TodoApp = () => {
                   </li>
                 ) : (
                   filteredTodos.map((todo) => (
-                    <li key={todo.id} className="todo-item">
+                    <li key={todo._id} className="todo-item">
                       <input
                         type="checkbox"
-                        checked={todo.completed}
-                        onChange={() => handleToggleTodo(todo.id)}
+                        checked={todo.isCompleted}
+                        onChange={() => handleToggleTodo(todo._id)}
                         className="todo-checkbox"
                       />
                       <span
                         className={`todo-text ${
-                          todo.completed ? "completed" : ""
+                          todo.isCompleted ? "completed" : ""
                         }`}
                       >
-                        {todo.text}
+                        {todo.title}
                       </span>
                       <button
-                        onClick={() => handleDeleteTodo(todo.id)}
+                        onClick={() => handleDeleteTodo(todo._id)}
                         className="delete-button"
                       >
                         ×

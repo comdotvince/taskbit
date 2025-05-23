@@ -1,7 +1,10 @@
 // src/pages/TodoApp.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { verifyAuth } from "../api/auth.jsx"; // Adjust the import path as necessary
+import profileLogo from "../assets/man.png"; // Adjust the import path as necessary
 import "./TodoApp.css";
+import Sidebar from "../components/Sidebar/Sidebar.jsx";
 
 const TodoApp = () => {
   const [todos, setTodos] = useState([]);
@@ -11,16 +14,19 @@ const TodoApp = () => {
   const [filter, setFilter] = useState("all");
   const [activeTab, setActiveTab] = useState("todos");
   const [isLoading, setIsLoading] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   const navigate = useNavigate();
 
   // Check authentication status
   useEffect(() => {
-    const checkAuth = async () => {
-      const token = localStorage.getItem("authToken");
-      if (!token) {
+    const checkAuthAndLoadData = async () => {
+      const authResult = await verifyAuth();
+
+      if (!authResult) {
         navigate("/login");
       } else {
-        // Simulate loading data
+        // Load sample data (kept in component)
         setTimeout(() => {
           setTodos([
             { id: 1, text: "Learn React", completed: false },
@@ -57,7 +63,8 @@ const TodoApp = () => {
         }, 1000);
       }
     };
-    checkAuth();
+
+    checkAuthAndLoadData();
   }, [navigate]);
 
   // Todo functions
@@ -135,11 +142,6 @@ const TodoApp = () => {
     setHabits(habits.filter((habit) => habit.id !== id));
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("authToken");
-    navigate("/login");
-  };
-
   const filteredTodos = todos.filter((todo) => {
     if (filter === "completed") return todo.completed;
     if (filter === "active") return !todo.completed;
@@ -153,8 +155,16 @@ const TodoApp = () => {
       <header className="todo-header">
         <div className="container">
           <h1>Taskbit</h1>
-          <button onClick={handleLogout} className="logout-button">
-            Logout
+
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="profile-icon profile-toggle"
+          >
+            <img
+              src={profileLogo}
+              alt="Man icons created by IconMarketPK - Flaticon"
+              style={{ width: "35px", height: "35px" }}
+            />
           </button>
         </div>
       </header>
@@ -317,6 +327,8 @@ const TodoApp = () => {
           )}
         </div>
       </main>
+
+      <Sidebar openSidebar={sidebarOpen} setOpenSidebar={setSidebarOpen} />
     </div>
   );
 };

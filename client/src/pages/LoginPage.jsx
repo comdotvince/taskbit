@@ -1,7 +1,5 @@
 // src/pages/LoginPage.jsx
 import React, { useState } from "react";
-import Cookies from "js-cookie";
-import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import { login } from "../api/auth";
 import "./LoginPage.css";
@@ -56,34 +54,23 @@ const LoginPage = () => {
           password: formData.password,
         });
 
-        const { token, user } = response;
         console.log("Login response:", response);
 
-        // Store token in cookie with expiration (7 days example)
-        Cookies.set("authToken", token, {
-          httpOnly: true,
-          expires: 7, // days
-          secure: import.meta.env.MODE === "production",
-          sameSite: "strict",
-        });
+        // Backend sets the httpOnly cookie, we don't need to handle token here
+        const { user } = response;
+        console.log("Login successful, user:", user);
 
         // Store user data in localStorage or context
         localStorage.setItem("user", JSON.stringify(user));
 
-        // Set default authorization header for future requests
-        axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-
         // Redirect to protected route
         navigate("/todos");
       } catch (error) {
-        console.error("Login error:", error);
+        console.error("Full login error:", error);
 
         if (error.response) {
-          // Handle different error statuses
           if (error.response.status === 401) {
             setErrors({ api: "Invalid email or password" });
-          } else if (error.response.status === 429) {
-            setErrors({ api: "Too many attempts. Please try again later." });
           } else {
             setErrors({
               api:
@@ -92,7 +79,9 @@ const LoginPage = () => {
             });
           }
         } else {
-          setErrors({ api: "Network error. Please check your connection." });
+          setErrors({
+            api: "Cannot connect to server. Please try again later.",
+          });
         }
       } finally {
         setIsSubmitting(false);

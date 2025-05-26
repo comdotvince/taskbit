@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import connectDB from "./config/mongodbConnect.js";
 import todoRoutes from "./routes/todoRoute.js";
+import habitRoutes from "./routes/habit.route.js";
 import cors from "cors";
 import authRouter from "./routes/auth.routes.js";
 
@@ -27,6 +28,7 @@ app.use(express.json());
 // Routes
 app.use("/api/auth", authRouter);
 app.use("/api/todos", todoRoutes);
+app.use("/api/habits", habitRoutes);
 
 app.get("/", (req, res) => {
   res.send("API is running...");

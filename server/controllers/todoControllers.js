@@ -10,7 +10,7 @@ const createTodo = asyncHandler(async (req, res) => {
   const todo = new Todo({
     title: req.body.title,
     isCompleted: req.body.isCompleted,
-    user: req.body.user, // Assuming you have user info in req.user
+    user: req.body.user,
   });
   const createdTodo = await todo.save();
   res.status(201).json(createdTodo);

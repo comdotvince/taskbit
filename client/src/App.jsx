@@ -4,7 +4,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import LandingPage from "./pages/LandingPage";
 import SignupPage from "./pages/SignupPage";
 import LoginPage from "./pages/LoginPage";
-import TodoApp from "./pages/TodoApp"; // Your main todo app component
+import TodoApp from "./pages/TodoApp";
 
 function App() {
   return (

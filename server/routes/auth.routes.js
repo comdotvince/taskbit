@@ -18,4 +18,8 @@ router.get("/profile", verifyToken, (req, res) => {
 
 router.get("/verify", verifyToken, verifyUser);
 
+router.get("/protected", verifyToken, (req, res) => {
+  res.json({ message: "This is a protected route" });
+});
+
 export default router;

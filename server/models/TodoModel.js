@@ -12,7 +12,7 @@ const todoSchema = new mongoose.Schema(
     },
     user: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User", // Must match the name of your User model
+      ref: "User",
       required: true,
     },
   },

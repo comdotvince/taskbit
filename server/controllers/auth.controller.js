@@ -160,7 +160,6 @@ export const getProfile = asyncHandler(async (req, res) => {
   res.json(user);
 });
 
-// auth.controller.js
 export const verifyUser = asyncHandler(async (req, res) => {
   try {
     // User is attached by your auth middleware
@@ -196,4 +195,13 @@ export const verifyUser = asyncHandler(async (req, res) => {
       message: "Authentication check failed",
     });
   }
+});
+
+// Protected endpoint
+
+export const protectedRoute = asyncHandler(async (req, res) => {
+  if (!req.cookies.authToken) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  res.json({ secretData: "This is protected content" });
 });

@@ -24,9 +24,11 @@ git clone https://github.com/comdotvince/taskbit.git
 cd taskbit
 cd server
 npm install
+npm run dev
 cd ..
 cd client
 npm install
+npm run dev
 ```
 
 ## Screenshot

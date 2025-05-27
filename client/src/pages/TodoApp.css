@@ -9,6 +9,10 @@
   --success: #10b981;
 }
 
+.icon-name {
+  cursor: pointer;
+}
+
 .todo-app-container {
   min-height: 100vh;
   background-color: var(--light);
@@ -49,6 +53,11 @@
   height: 40px;
   border: none;
   border-radius: 50%;
+  cursor: pointer;
+}
+
+.profile-logo {
+  cursor: pointer;
 }
 
 .logout-button:hover {

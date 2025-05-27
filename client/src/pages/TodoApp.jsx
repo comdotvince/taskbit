@@ -132,18 +132,26 @@ const TodoApp = () => {
     }
   };
   const handleDeleteTodo = async (id) => {
-    try {
-      // OPTION 1: Standard RESTful approach (ID in URL)
-      await api.delete("/todos", {
-        data: { id },
-        withCredentials: true,
-      });
+    // Pop-up confirmation before deletion
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this todo?"
+    );
+    if (confirmDelete) {
+      try {
+        // OPTION 1: Standard RESTful approach (ID in URL)
+        await api.delete("/todos", {
+          data: { id },
+          withCredentials: true,
+        });
 
-      // Update UI after successful deletion
-      setTodos(todos.filter((todo) => todo._id !== id));
-    } catch (error) {
-      console.error("Error deleting todo:", error);
-      // Handle error (show error message to user, etc.)
+        // Update UI after successful deletion
+        setTodos(todos.filter((todo) => todo._id !== id));
+      } catch (error) {
+        console.error("Error deleting todo:", error);
+        // Handle error (show error message to user, etc.)
+      }
+    } else {
+      return; // Exit if user cancels deletion
     }
   };
 
@@ -191,9 +199,20 @@ const TodoApp = () => {
   };
 
   const handleDeleteHabit = (id) => {
-    setHabits(habits.filter((habit) => habit.id !== id));
+    // setHabits(habits.filter((habit) => habit.id !== id));
+
+    // Pop-up confirmation before deletion
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this habit?"
+    );
+    if (confirmDelete) {
+      setHabits(habits.filter((habit) => habit.id !== id));
+    }
   };
 
+  const handleGoToLandingpage = () => {
+    navigate("/");
+  };
   const filteredTodos = todos.filter((todo) => {
     if (filter === "completed") return todo.isCompleted;
     if (filter === "active") return !todo.isCompleted;
@@ -206,13 +225,16 @@ const TodoApp = () => {
     <div className="todo-app-container">
       <header className="todo-header">
         <div className="container">
-          <h1>Taskbit</h1>
+          <h1 onClick={handleGoToLandingpage} className="icon-name">
+            Taskbit
+          </h1>
 
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="profile-icon profile-toggle"
           >
             <img
+              className="profile-logo"
               src={profileLogo}
               alt="Man icons created by IconMarketPK - Flaticon"
               style={{ width: "35px", height: "35px" }}

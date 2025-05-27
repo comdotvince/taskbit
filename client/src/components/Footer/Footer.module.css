@@ -1,6 +1,7 @@
 /* src/components/Footer/Footer.module.css */
 .footer {
-  padding: 40px 0;
+  padding-top: 150px;
+  padding-bottom: 10px;
   text-align: center;
   color: var(--gray);
   font-size: 14px;

@@ -124,7 +124,8 @@ const SignUp = () => {
       <div className="signup-card">
         <h2>Create Your Account</h2>
         <p className="subtitle">
-          Join thousands of users managing their tasks with our app
+          Track your daily tasks and habit efficiently with Taskbit. Sign up to
+          get started!
         </p>
 
         {successMessage && (
@@ -215,12 +216,6 @@ const SignUp = () => {
 
         <div className="login-link">
           Already have an account? <Link to="/login">Log in</Link>
-        </div>
-
-        <div className="terms">
-          By signing up, you agree to our{" "}
-          <Link to="/terms">Terms of Service</Link> and{" "}
-          <Link to="/privacy">Privacy Policy</Link>.
         </div>
       </div>
     </div>

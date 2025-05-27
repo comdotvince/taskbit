@@ -2,7 +2,7 @@
 
 ## 🧾 Overview
 
-Simple Todo List on Web. This is a prerequisite for larger projects that I want to build
+Todo List and Habit Tracker on Web.
 
 ## 🧰 Tech Stack
 
@@ -15,13 +15,17 @@ Simple Todo List on Web. This is a prerequisite for larger projects that I want 
 ### Prerequisites
 
 - Node.js
-- MongoDB
+
 
 ### Installation
 
 ```bash
-git clone https://github.com/your/repo.git
-cd repo
+git clone https://github.com/comdotvince/taskbit.git
+cd taskbit
+cd server
+npm install
+cd ..
+cd client
 npm install
 ```
 

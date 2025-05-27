@@ -14,7 +14,7 @@ connectDB();
 const app = express();
 
 const corsOptions = {
-  origin: "http://localhost:5173", // Your frontend origin
+  origin: ["http://localhost:5173", "http://192.168.1.49:5173"], // Your frontend origin
   credentials: true, // Allow credentials (cookies)
   optionsSuccessStatus: 200, // Some legacy browsers choke on 204
   exposedHeaders: ["set-cookie"], // Needed for some cookie scenarios

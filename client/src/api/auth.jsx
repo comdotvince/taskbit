@@ -2,6 +2,10 @@ import axios from "axios";
 import api from "./axios";
 
 const API_URL = import.meta.env.VITE_API_URL;
+const API_URL_LAN = import.meta.env.VITE_API_URL_LAN;
+
+const currentAPI =
+  window.location.hostname === "localhost" ? API_URL : API_URL_LAN;
 
 export const signup = async (userData) => {
   try {
@@ -62,7 +66,10 @@ export const login = async (credentials) => {
 
 export const logout = async (userData) => {
   try {
-    const response = await axios.post(`${API_URL}/api/auth/logout`, userData);
+    const response = await axios.post(
+      `${currentAPI}/api/auth/logout`,
+      userData
+    );
     return response.data;
   } catch (error) {
     throw error.response?.data?.message || error.message;

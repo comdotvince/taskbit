@@ -1,8 +1,14 @@
 // src/api.js
 import axios from "axios";
 
+const API_URL = import.meta.env.VITE_API_URL;
+const API_URL_LAN = import.meta.env.VITE_API_URL_LAN;
+
+const currentAPI =
+  window.location.hostname === "localhost" ? API_URL : API_URL_LAN;
+
 const api = axios.create({
-  baseURL: "http://localhost:3000/api",
+  baseURL: `${currentAPI}/api`,
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",

@@ -1,8 +1,7 @@
-// src/pages/TodoApp.jsx
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { verifyAuth } from "../api/auth.jsx"; // Adjust the import path as necessary
-import api from "../api/axios.jsx"; // Adjust the import path as necessary
+import { verifyAuth } from "../api/auth.jsx";
+import api from "../api/axios.jsx";
 import "./TodoApp.css";
 import Sidebar from "../components/Sidebar/Sidebar.jsx";
 import { v4 as uuidv4 } from "uuid";
@@ -31,12 +30,17 @@ const TodoApp = () => {
       if (!authResult) {
         navigate("/login");
       } else {
-        const res = await api.get("/todos", {
+        const todoRes = await api.get("/todos", {
           id: user.id,
           withCredentials: true,
         });
 
-        setTodos(res.data);
+        const habitRes = await api.get("/habits", {
+          id: user.id,
+          withCredentials: true,
+        });
+        setHabits(habitRes.data);
+        setTodos(todoRes.data);
 
         setIsLoading(false);
       }
@@ -130,6 +134,7 @@ const TodoApp = () => {
       );
     }
   };
+
   const handleDeleteTodo = async (id) => {
     // Pop-up confirmation before deletion
     const confirmDelete = window.confirm(
@@ -155,20 +160,31 @@ const TodoApp = () => {
   };
 
   // Habit functions
-  const handleAddHabit = (e) => {
+  const handleAddHabit = async (e) => {
     e.preventDefault();
-    if (newHabit.trim()) {
-      setHabits([
-        ...habits,
-        {
-          id: Date.now(),
-          name: newHabit.trim(),
-          streak: 0,
-          lastCompleted: null,
-          history: {},
-        },
-      ]);
+
+    if (!newHabit.trim()) return; // Don't proceed if empty
+    const user = JSON.parse(localStorage.getItem("user"));
+
+    try {
+      // Create the habit object
+      const habitData = {
+        _id: uuidv4(), // Generate a unique ID
+        title: newHabit.trim(),
+        streak: 0,
+        user: user.id,
+        lastCompleted: null,
+        history: {},
+      };
+      const response = await api.post("/habits", habitData, {
+        withCredentials: true,
+      });
+      // Update the state with the new habit
+      setHabits([...habits, response.data]);
       setNewHabit("");
+    } catch (error) {
+      console.error("Error adding habit:", error);
+      // Handle error (show error message to user, etc.)
     }
   };
 
@@ -198,20 +214,36 @@ const TodoApp = () => {
   };
 
   const handleDeleteHabit = (id) => {
-    // setHabits(habits.filter((habit) => habit.id !== id));
-
     // Pop-up confirmation before deletion
     const confirmDelete = window.confirm(
       "Are you sure you want to delete this habit?"
     );
     if (confirmDelete) {
       setHabits(habits.filter((habit) => habit.id !== id));
+
+      api
+        .delete("/habits", {
+          data: { id },
+          withCredentials: true,
+        })
+        .then((response) => {
+          console.log("Habit deleted successfully:", response.data);
+        })
+        .catch((error) => {
+          console.error("Error deleting habit:", error);
+          // Handle error (show error message to user, etc.)
+        })
+        .finally(() => {
+          setHabits(habits.filter((habit) => habit._id !== id));
+          console.log("Habit deleted successfully");
+        });
     }
   };
 
   const handleGoToLandingpage = () => {
     navigate("/");
   };
+
   const filteredTodos = todos.filter((todo) => {
     if (filter === "completed") return todo.isCompleted;
     if (filter === "active") return !todo.isCompleted;
@@ -237,12 +269,12 @@ const TodoApp = () => {
               width="35"
               height="35"
               fill="#4f46e5"
-              class="bi bi-person-circle"
+              className="bi bi-person-circle"
               viewBox="0 0 16 16"
             >
               <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0" />
               <path
-                fill-rule="evenodd"
+                fillRule="evenodd"
                 d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1"
               />
             </svg>
@@ -372,9 +404,9 @@ const TodoApp = () => {
                       const isCompletedToday = habit.history[today];
 
                       return (
-                        <li key={habit.id} className="habit-item">
+                        <li key={habit._id} className="habit-item">
                           <div className="habit-info">
-                            <span className="habit-name">{habit.name}</span>
+                            <span className="habit-name">{habit.title}</span>
                             <span className="habit-streak">
                               🔥 {habit.streak} day streak
                             </span>
@@ -393,7 +425,7 @@ const TodoApp = () => {
                               : "Complete today"}
                           </button>
                           <button
-                            onClick={() => handleDeleteHabit(habit.id)}
+                            onClick={() => handleDeleteHabit(habit._id)}
                             className="delete-button"
                           >
                             ×

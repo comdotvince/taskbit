@@ -6,4 +6,30 @@ const getHabits = asyncHandler(async (req, res) => {
   res.json(habits);
 });
 
-export { getHabits };
+const createHabit = asyncHandler(async (req, res) => {
+  const { title, streak, user, lastCompleted, history } = req.body;
+
+  const habit = new Habit({
+    title,
+    streak,
+    user,
+    lastCompleted: lastCompleted || null,
+    history: history || {},
+  });
+
+  const createdHabit = await habit.save();
+  res.status(201).json(createdHabit);
+});
+
+const deleteHabit = asyncHandler(async (req, res) => {
+  const habit = await Habit.findById(req.body.id);
+  if (habit) {
+    await Habit.findByIdAndDelete(req.body.id);
+    res.json({ message: "Habit removed" });
+  } else {
+    res.status(404);
+    throw new Error("Habit not found");
+  }
+});
+
+export { getHabits, createHabit, deleteHabit };

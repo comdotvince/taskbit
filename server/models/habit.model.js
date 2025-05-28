@@ -14,6 +14,15 @@ const habitSchema = new mongoose.Schema({
     ref: "User",
     required: true,
   },
+  lastCompleted: {
+    type: Date,
+    default: null,
+  },
+  history: {
+    type: Map,
+    of: Boolean,
+    default: {},
+  },
 });
 
 const Habit = mongoose.model("Habit", habitSchema);

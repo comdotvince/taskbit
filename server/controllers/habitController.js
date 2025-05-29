@@ -2,7 +2,7 @@ import asyncHandler from "express-async-handler";
 import { Habit } from "../models/habit.model.js";
 
 const getHabits = asyncHandler(async (req, res) => {
-  const habits = await Habit.find({});
+  const habits = await Habit.find({ user: req.user._id });
   res.json(habits);
 });
 

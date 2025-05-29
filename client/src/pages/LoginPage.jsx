@@ -49,22 +49,12 @@ const LoginPage = () => {
       setErrors({});
 
       try {
-        const response = await login({
+        await login({
           email: formData.email,
           password: formData.password,
         });
 
-        console.log("Login response:", response);
-
-        // Backend sets the httpOnly cookie, we don't need to handle token here
-        const { user } = response;
-        console.log("Login successful, user:", user);
-
-        // Store user data in localStorage or context
-        localStorage.setItem("user", JSON.stringify(user));
-
-        // Redirect to protected route
-        navigate("/todos");
+        navigate("/app");
       } catch (error) {
         console.error("Full login error:", error);
 

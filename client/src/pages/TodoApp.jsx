@@ -12,7 +12,9 @@ const TodoApp = () => {
   const [newTodo, setNewTodo] = useState("");
   const [newHabit, setNewHabit] = useState("");
   const [filter, setFilter] = useState("all");
-  const [activeTab, setActiveTab] = useState("todos");
+  const [activeTab, setActiveTab] = useState(() => {
+    return localStorage.getItem("activeTab") || "todos";
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -22,21 +24,16 @@ const TodoApp = () => {
   useEffect(() => {
     const checkAuthAndLoadData = async () => {
       const authResult = await verifyAuth();
-
-      const user = JSON.parse(localStorage.getItem("user"));
-
-      console.log("User data:", user.id);
+      localStorage.setItem("activeTab", activeTab);
 
       if (!authResult) {
         navigate("/login");
       } else {
         const todoRes = await api.get("/todos", {
-          id: user.id,
           withCredentials: true,
         });
 
         const habitRes = await api.get("/habits", {
-          id: user.id,
           withCredentials: true,
         });
         setHabits(habitRes.data);
@@ -297,13 +294,19 @@ const TodoApp = () => {
         <div className="container">
           <div className="tab-buttons">
             <button
-              onClick={() => setActiveTab("todos")}
+              onClick={() => {
+                setActiveTab("todos");
+                localStorage.setItem("activeTab", "todos");
+              }}
               className={activeTab === "todos" ? "active" : ""}
             >
               Todos
             </button>
             <button
-              onClick={() => setActiveTab("habits")}
+              onClick={() => {
+                setActiveTab("habits");
+                localStorage.setItem("activeTab", "habits");
+              }}
               className={activeTab === "habits" ? "active" : ""}
             >
               Habits

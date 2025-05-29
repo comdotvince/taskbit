@@ -63,14 +63,7 @@ export const login = asyncHandler(async (req, res) => {
       path: "/",
     });
 
-    // Return user data (excluding password)
-    const userData = user.toObject();
-    delete userData.password;
-
-    res.json({
-      success: true,
-      user: userData,
-    });
+    res.json({ message: "Logged in" });
   } catch (error) {
     console.error("Login error:", {
       message: error.message,

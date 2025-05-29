@@ -13,7 +13,7 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/todos" element={<TodoApp />} />
+        <Route path="/app" element={<TodoApp />} />
       </Routes>
     </Router>
   );

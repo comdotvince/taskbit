@@ -44,7 +44,7 @@ const TodoApp = () => {
     };
 
     checkAuthAndLoadData();
-  }, [navigate]);
+  }, [activeTab, navigate]);
 
   // Todo functions
   const handleAddTodo = async (e) => {

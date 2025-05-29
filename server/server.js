@@ -6,6 +6,8 @@ import todoRoutes from "./routes/todoRoute.js";
 import habitRoutes from "./routes/habit.route.js";
 import cors from "cors";
 import authRouter from "./routes/auth.routes.js";
+import cron from "node-cron";
+import { markMissedDays } from "./services/habitService.js";
 
 dotenv.config();
 
@@ -35,6 +37,17 @@ app.get("/", (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
+
+// Schedule a cron job to run every day at 00:00
+cron.schedule("0 0 * * *", async () => {
+  try {
+    console.log("Running daily habit check at midnight");
+    await markMissedDays();
+    console.log("Daily habit check completed successfully");
+  } catch (error) {
+    console.error("Error in daily habit check:", error);
+  }
+});
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);

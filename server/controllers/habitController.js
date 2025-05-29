@@ -21,6 +21,23 @@ const createHabit = asyncHandler(async (req, res) => {
   res.status(201).json(createdHabit);
 });
 
+const completeHabit = asyncHandler(async (req, res) => {
+  const habit = await Habit.findById(req.body.id);
+  if (habit) {
+    habit.streak += 1;
+    habit.lastCompleted = new Date();
+
+    if (!habit.history) habit.history = {};
+    habit.history.set(habit.lastCompleted.toISOString().split("T")[0], true);
+
+    const updatedHabit = await habit.save();
+    res.json(updatedHabit);
+  } else {
+    res.status(404);
+    throw new Error("Habit not found");
+  }
+});
+
 const deleteHabit = asyncHandler(async (req, res) => {
   const habit = await Habit.findById(req.body.id);
   if (habit) {
@@ -32,4 +49,4 @@ const deleteHabit = asyncHandler(async (req, res) => {
   }
 });
 
-export { getHabits, createHabit, deleteHabit };
+export { getHabits, createHabit, deleteHabit, completeHabit };

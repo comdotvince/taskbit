@@ -190,9 +190,20 @@ const TodoApp = () => {
 
   const handleCompleteHabit = (id) => {
     const today = new Date().toISOString().split("T")[0];
+
+    api
+      .patch("/habits", { id, today }, { withCredentials: true })
+      .then((response) => {
+        console.log("Habit completed successfully:", response.data);
+      })
+      .catch((error) => {
+        console.error("Error completing habit:", error);
+        // Handle error (show error message to user, etc.)
+      });
+
     setHabits(
       habits.map((habit) => {
-        if (habit.id === id) {
+        if (habit._id === id) {
           const yesterday = new Date(Date.now() - 86400000)
             .toISOString()
             .split("T")[0];
@@ -413,7 +424,8 @@ const TodoApp = () => {
                           </div>
                           <button
                             onClick={() =>
-                              !isCompletedToday && handleCompleteHabit(habit.id)
+                              !isCompletedToday &&
+                              handleCompleteHabit(habit._id)
                             }
                             className={`habit-complete-button ${
                               isCompletedToday ? "completed" : ""

@@ -21,7 +21,8 @@
     "express-rate-limit": "^7.5.0",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.13.2"
+    "mongoose": "^8.13.2",
+    "node-cron": "^4.0.7"
   },
   "devDependencies": {
     "jest": "^29.7.0",

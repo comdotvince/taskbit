@@ -135,7 +135,7 @@ export const signup = asyncHandler(async (req, res) => {
 });
 
 export const logout = (req, res) => {
-  res.clearCookie("token", {
+  res.clearCookie("authToken", {
     httpOnly: true,
     secure: true, // set to true in production (HTTPS)
     sameSite: "strict", // CSRF protection
@@ -188,13 +188,4 @@ export const verifyUser = asyncHandler(async (req, res) => {
       message: "Authentication check failed",
     });
   }
-});
-
-// Protected endpoint
-
-export const protectedRoute = asyncHandler(async (req, res) => {
-  if (!req.cookies.authToken) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
-  res.json({ secretData: "This is protected content" });
 });

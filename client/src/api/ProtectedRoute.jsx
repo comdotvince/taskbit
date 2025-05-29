@@ -10,7 +10,8 @@ export default function ProtectedRoute() {
     const verifyAuth = async () => {
       try {
         // This endpoint should check the auth cookie
-        await api.get("/api/protected", { withCredentials: true });
+        await api.get("/auth/protected", { withCredentials: true });
+        console.log("User is authenticated");
         setIsAuthenticated(true);
       } catch (error) {
         console.error("Not authenticated", error);

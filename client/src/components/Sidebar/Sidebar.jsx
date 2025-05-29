@@ -39,6 +39,7 @@ const Sidebar = ({ openSidebar, setOpenSidebar }) => {
   const handleLogout = async () => {
     try {
       await api.post("/auth/logout", {}, { withCredentials: true });
+      console.log("Logout successful");
       localStorage.removeItem("user");
       navigate("/login");
     } catch (error) {

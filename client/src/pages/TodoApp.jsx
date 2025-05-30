@@ -17,34 +17,72 @@ const TodoApp = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [user, setUser] = useState(null); // null = guest, object = logged in
+  const [localDataLoaded, setLocalDataLoaded] = useState(false);
 
   const navigate = useNavigate();
+
+  // Load guest data from localStorage
+  const loadGuestData = () => {
+    const guestTodos = JSON.parse(localStorage.getItem("guestTodos")) || [];
+    const guestHabits = JSON.parse(localStorage.getItem("guestHabits")) || [];
+    setTodos(guestTodos);
+    setHabits(guestHabits);
+    setLocalDataLoaded(true);
+  };
+
+  // Save guest data to localStorage
+  const saveGuestData = () => {
+    localStorage.setItem("guestTodos", JSON.stringify(todos));
+    localStorage.setItem("guestHabits", JSON.stringify(habits));
+  };
 
   // Check authentication status
   useEffect(() => {
     const checkAuthAndLoadData = async () => {
-      const authResult = await verifyAuth();
-      localStorage.setItem("activeTab", activeTab);
+      // First load guest data for immediate UI
+      loadGuestData();
 
-      if (!authResult) {
-        navigate("/login");
-      } else {
-        const todoRes = await api.get("/todos", {
-          withCredentials: true,
-        });
+      try {
+        const authResult = await verifyAuth();
 
-        const habitRes = await api.get("/habits", {
-          withCredentials: true,
-        });
-        setHabits(habitRes.data);
-        setTodos(todoRes.data);
-
+        if (authResult?.isAuthenticated === false || !authResult) {
+          // Stay in guest mode
+          setUser(null);
+          console.log("Running in guest mode");
+        } else {
+          // Switch to authenticated mode
+          setUser(authResult);
+          try {
+            const [todoRes, habitRes] = await Promise.all([
+              api.get("/todos", { withCredentials: true }),
+              api.get("/habits", { withCredentials: true }),
+            ]);
+            setTodos(todoRes.data);
+            setHabits(habitRes.data);
+          } catch (error) {
+            console.error("Failed to fetch user data:", error);
+            // Stay with guest data if fetch fails
+          }
+        }
+      } catch (error) {
+        console.error("Auth verification failed:", error);
+        // Stay in guest mode
+        setUser(null);
+      } finally {
         setIsLoading(false);
       }
     };
 
     checkAuthAndLoadData();
-  }, [activeTab, navigate]);
+  }, []);
+
+  // Save guest data when it changes
+  useEffect(() => {
+    if (localDataLoaded && !user) {
+      saveGuestData();
+    }
+  }, [todos, habits, localDataLoaded, user]);
 
   // Todo functions
   const handleAddTodo = async (e) => {

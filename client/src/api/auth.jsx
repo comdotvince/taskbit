@@ -77,44 +77,24 @@ export const logout = async (userData) => {
 };
 export const verifyAuth = async () => {
   try {
+    // Make a GET request to the "/auth/verify" endpoint
     const response = await api.get("/auth/verify", {
-      withCredentials: true, // Ensure cookies are sent
-      timeout: 5000, // 5 second timeout
+      withCredentials: true, // Include cookies in the request
+      timeout: 5000, // Set timeout to 5 seconds
     });
 
-    // Validate response structure
-    if (!response.data?.success || !response.data.user) {
-      console.warn("Invalid verification response:", response.data);
-      localStorage.removeItem("user");
-      return null;
+    // Check if response contains valid user data
+    if (!response.data || !response.data.user) {
+      throw new Error("User not authenticated");
     }
 
-    // Update stored user data
-    localStorage.setItem("user", JSON.stringify(response.data.user));
-
+    // Return the user data if authenticated
     return response.data.user;
   } catch (error) {
-    // Enhanced error logging
-    const errorDetails = {
-      status: error.response?.status,
-      code: error.response?.data?.code,
-      message: error.message,
-      responseData: error.response?.data,
+    // Return an object indicating authentication failure
+    return {
+      isAuthenticated: false,
+      error: error.response?.data?.message || "Authentication failed",
     };
-
-    console.error("Auth verification failed:", errorDetails);
-
-    // Clear invalid auth data
-    localStorage.removeItem("user");
-
-    // Handle specific error cases
-    if (error.response?.status === 401) {
-      // Token expired or invalid
-      console.log("Authentication expired - please log in again");
-    } else if (error.code === "ECONNABORTED") {
-      console.warn("Verification timeout - check network connection");
-    }
-
-    return null;
   }
 };

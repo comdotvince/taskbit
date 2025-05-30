@@ -54,7 +54,7 @@ const LoginPage = () => {
           password: formData.password,
         });
 
-        navigate("/app");
+        navigate("/");
       } catch (error) {
         console.error("Full login error:", error);
 

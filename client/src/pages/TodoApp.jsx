@@ -1,6 +1,4 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { verifyAuth } from "../api/auth.jsx";
 import api from "../api/axios.jsx";
 import "./TodoApp.css";
 import Sidebar from "../components/Sidebar/Sidebar.jsx";
@@ -17,10 +15,8 @@ const TodoApp = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [user, setUser] = useState(null); // null = guest, object = logged in
+  const [user, setUser] = useState(null);
   const [localDataLoaded, setLocalDataLoaded] = useState(false);
-
-  const navigate = useNavigate();
 
   // Load guest data from localStorage
   const loadGuestData = () => {
@@ -29,121 +25,146 @@ const TodoApp = () => {
     setTodos(guestTodos);
     setHabits(guestHabits);
     setLocalDataLoaded(true);
+    console.log("Loaded guest data:", {
+      todos: guestTodos.length,
+      habits: guestHabits.length,
+    });
   };
 
   // Save guest data to localStorage
   const saveGuestData = () => {
-    localStorage.setItem("guestTodos", JSON.stringify(todos));
-    localStorage.setItem("guestHabits", JSON.stringify(habits));
+    if (!user) {
+      // Only save to localStorage when in guest mode
+      localStorage.setItem("guestTodos", JSON.stringify(todos));
+      localStorage.setItem("guestHabits", JSON.stringify(habits));
+      console.log("Saved guest data to localStorage");
+    }
   };
 
-  // Check authentication status
+  // Check if user is logged in and load data
   useEffect(() => {
-    const checkAuthAndLoadData = async () => {
-      // First load guest data for immediate UI
+    const checkUserAndLoadData = async () => {
+      // Always start with guest data for immediate UI
       loadGuestData();
 
-      try {
-        const authResult = await verifyAuth();
+      // Check if user is stored in localStorage (simple logged-in check)
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        try {
+          const userData = JSON.parse(storedUser);
+          setUser(userData);
+          console.log("User found in localStorage:", userData.name);
 
-        if (authResult?.isAuthenticated === false || !authResult) {
-          // Stay in guest mode
-          setUser(null);
-          console.log("Running in guest mode");
-        } else {
-          // Switch to authenticated mode
-          setUser(authResult);
+          // Try to fetch user's backend data
           try {
             const [todoRes, habitRes] = await Promise.all([
               api.get("/todos", { withCredentials: true }),
               api.get("/habits", { withCredentials: true }),
             ]);
+
+            // Use backend data if available
             setTodos(todoRes.data);
             setHabits(habitRes.data);
+            console.log("Loaded backend data for authenticated user");
           } catch (error) {
             console.error("Failed to fetch user data:", error);
-            // Stay with guest data if fetch fails
+            // If backend fails, keep guest data
           }
+        } catch (error) {
+          console.error("Invalid user data in localStorage:", error);
+          localStorage.removeItem("user");
         }
-      } catch (error) {
-        console.error("Auth verification failed:", error);
+      } else {
         // Stay in guest mode
         setUser(null);
-      } finally {
-        setIsLoading(false);
+        console.log("Running in guest mode");
       }
+
+      setIsLoading(false);
     };
 
-    checkAuthAndLoadData();
+    checkUserAndLoadData();
   }, []);
 
-  // Save guest data when it changes
+  // Save guest data when it changes (only in guest mode)
   useEffect(() => {
     if (localDataLoaded && !user) {
       saveGuestData();
     }
   }, [todos, habits, localDataLoaded, user]);
 
-  // Todo functions
-  const handleAddTodo = async (e) => {
+  // Guest mode todo functions
+  const handleAddTodoGuest = (e) => {
     e.preventDefault();
+    if (!newTodo.trim()) return;
 
-    if (!newTodo.trim()) return; // Don't proceed if empty
-    const user = JSON.parse(localStorage.getItem("user"));
+    const newTodoItem = {
+      _id: uuidv4(),
+      title: newTodo.trim(),
+      isCompleted: false,
+      createdAt: new Date().toISOString(),
+    };
+
+    setTodos([...todos, newTodoItem]);
+    setNewTodo("");
+  };
+
+  // Authenticated mode todo functions
+  const handleAddTodoAuth = async (e) => {
+    e.preventDefault();
+    if (!newTodo.trim()) return;
 
     try {
-      // Create the todo object
       const todoData = {
-        _id: uuidv4(), // Generate a unique ID
         title: newTodo.trim(),
         isCompleted: false,
         user: user.id,
-        // Add any other required fields from your backend
       };
 
-      // Make POST request to your backend API
       const response = await api.post("/todos", todoData, {
         withCredentials: true,
       });
 
-      // If successful, update the frontend state with the response data
-      setTodos([
-        ...todos,
-        response.data, // Assuming your backend returns the created todo
-      ]);
-
-      setNewTodo(""); // Clear the input field
+      setTodos([...todos, response.data]);
+      setNewTodo("");
     } catch (error) {
       console.error("Error adding todo:", error);
-      // Handle error (show error message to user, etc.)
     }
   };
-  const handleToggleTodo = async (id) => {
-    const originalTodos = [...todos];
 
+  // Combined add todo function
+  const handleAddTodo = user ? handleAddTodoAuth : handleAddTodoGuest;
+
+  const handleToggleTodo = async (id) => {
+    if (!user) {
+      // Guest mode
+      setTodos(
+        todos.map((todo) =>
+          todo._id === id ? { ...todo, isCompleted: !todo.isCompleted } : todo
+        )
+      );
+      return;
+    }
+
+    // Authenticated mode
+    const originalTodos = [...todos];
     try {
-      // Optimistic update
       setTodos(
         todos.map((todo) =>
           todo._id === id ? { ...todo, isCompleted: !todo.isCompleted } : todo
         )
       );
 
-      // Try both endpoint styles
       let response;
       try {
-        // RESTful style
         response = await api.patch(
           `/todos/${id}`,
           { isCompleted: !originalTodos.find((t) => t._id === id).isCompleted },
           { withCredentials: true }
         );
       } catch (error) {
-        console.error(
-          "RESTful style failed, trying body parameter style:",
-          error
-        );
-        // Fallback to body parameter style
+        // Fallback to patching by sending the entire todo object
+        console.warn("Patch by ID failed, falling back to full update:", error);
         response = await api.patch(
           "/todos",
           {
@@ -154,57 +175,65 @@ const TodoApp = () => {
         );
       }
 
-      // Verify response
       if (!response.data || response.data._id !== id) {
         throw new Error("Invalid server response");
       }
     } catch (error) {
       console.error("Toggle failed:", error.response?.data || error.message);
       setTodos(originalTodos);
-
-      alert(
-        error.response?.data?.error === "Item not found"
-          ? "Todo not found"
-          : "Failed to update status"
-      );
+      alert("Failed to update status");
     }
   };
 
   const handleDeleteTodo = async (id) => {
-    // Pop-up confirmation before deletion
     const confirmDelete = window.confirm(
       "Are you sure you want to delete this todo?"
     );
-    if (confirmDelete) {
-      try {
-        // OPTION 1: Standard RESTful approach (ID in URL)
-        await api.delete("/todos", {
-          data: { id },
-          withCredentials: true,
-        });
+    if (!confirmDelete) return;
 
-        // Update UI after successful deletion
-        setTodos(todos.filter((todo) => todo._id !== id));
-      } catch (error) {
-        console.error("Error deleting todo:", error);
-        // Handle error (show error message to user, etc.)
-      }
-    } else {
-      return; // Exit if user cancels deletion
+    if (!user) {
+      // Guest mode
+      setTodos(todos.filter((todo) => todo._id !== id));
+      return;
+    }
+
+    // Authenticated mode
+    try {
+      await api.delete("/todos", {
+        data: { id },
+        withCredentials: true,
+      });
+      setTodos(todos.filter((todo) => todo._id !== id));
+    } catch (error) {
+      console.error("Error deleting todo:", error);
     }
   };
 
-  // Habit functions
-  const handleAddHabit = async (e) => {
+  // Guest mode habit functions
+  const handleAddHabitGuest = (e) => {
     e.preventDefault();
+    if (!newHabit.trim()) return;
 
-    if (!newHabit.trim()) return; // Don't proceed if empty
-    const user = JSON.parse(localStorage.getItem("user"));
+    const newHabitItem = {
+      _id: uuidv4(),
+      title: newHabit.trim(),
+      streak: 0,
+      lastCompleted: null,
+      history: {},
+      createdAt: new Date().toISOString(),
+    };
+
+    setHabits([...habits, newHabitItem]);
+    setNewHabit("");
+  };
+
+  // Authenticated mode habit functions
+  const handleAddHabitAuth = async (e) => {
+    e.preventDefault();
+    if (!newHabit.trim()) return;
 
     try {
-      // Create the habit object
       const habitData = {
-        _id: uuidv4(), // Generate a unique ID
         title: newHabit.trim(),
         streak: 0,
         user: user.id,
@@ -214,80 +243,97 @@ const TodoApp = () => {
       const response = await api.post("/habits", habitData, {
         withCredentials: true,
       });
-      // Update the state with the new habit
       setHabits([...habits, response.data]);
       setNewHabit("");
     } catch (error) {
       console.error("Error adding habit:", error);
-      // Handle error (show error message to user, etc.)
     }
   };
 
-  const handleCompleteHabit = (id) => {
+  // Combined add habit function
+  const handleAddHabit = user ? handleAddHabitAuth : handleAddHabitGuest;
+
+  const handleCompleteHabit = async (id) => {
     const today = new Date().toISOString().split("T")[0];
 
-    api
-      .patch("/habits", { id, today }, { withCredentials: true })
-      .then((response) => {
-        console.log("Habit completed successfully:", response.data);
-      })
-      .catch((error) => {
-        console.error("Error completing habit:", error);
-        // Handle error (show error message to user, etc.)
-      });
+    if (!user) {
+      // Guest mode
+      setHabits(
+        habits.map((habit) => {
+          if (habit._id === id) {
+            const yesterday = new Date(Date.now() - 86400000)
+              .toISOString()
+              .split("T")[0];
+            const isConsecutive = habit.lastCompleted === yesterday;
 
-    setHabits(
-      habits.map((habit) => {
-        if (habit._id === id) {
-          const yesterday = new Date(Date.now() - 86400000)
-            .toISOString()
-            .split("T")[0];
-          const isConsecutive = habit.lastCompleted === yesterday;
+            return {
+              ...habit,
+              streak: isConsecutive ? habit.streak + 1 : 1,
+              lastCompleted: today,
+              history: {
+                ...habit.history,
+                [today]: true,
+              },
+            };
+          }
+          return habit;
+        })
+      );
+      return;
+    }
 
-          return {
-            ...habit,
-            streak: isConsecutive ? habit.streak + 1 : 1,
-            lastCompleted: today,
-            history: {
-              ...habit.history,
-              [today]: true,
-            },
-          };
-        }
-        return habit;
-      })
-    );
+    // Authenticated mode
+    try {
+      await api.patch("/habits", { id, today }, { withCredentials: true });
+
+      setHabits(
+        habits.map((habit) => {
+          if (habit._id === id) {
+            const yesterday = new Date(Date.now() - 86400000)
+              .toISOString()
+              .split("T")[0];
+            const isConsecutive = habit.lastCompleted === yesterday;
+
+            return {
+              ...habit,
+              streak: isConsecutive ? habit.streak + 1 : 1,
+              lastCompleted: today,
+              history: {
+                ...habit.history,
+                [today]: true,
+              },
+            };
+          }
+          return habit;
+        })
+      );
+    } catch (error) {
+      console.error("Error completing habit:", error);
+    }
   };
 
-  const handleDeleteHabit = (id) => {
-    // Pop-up confirmation before deletion
+  const handleDeleteHabit = async (id) => {
     const confirmDelete = window.confirm(
       "Are you sure you want to delete this habit?"
     );
-    if (confirmDelete) {
-      setHabits(habits.filter((habit) => habit.id !== id));
+    if (!confirmDelete) return;
 
-      api
-        .delete("/habits", {
-          data: { id },
-          withCredentials: true,
-        })
-        .then((response) => {
-          console.log("Habit deleted successfully:", response.data);
-        })
-        .catch((error) => {
-          console.error("Error deleting habit:", error);
-          // Handle error (show error message to user, etc.)
-        })
-        .finally(() => {
-          setHabits(habits.filter((habit) => habit._id !== id));
-          console.log("Habit deleted successfully");
-        });
+    if (!user) {
+      // Guest mode
+      setHabits(habits.filter((habit) => habit._id !== id));
+      return;
     }
-  };
 
-  const handleGoToLandingpage = () => {
-    navigate("/");
+    // Authenticated mode
+    try {
+      await api.delete("/habits", {
+        data: { id },
+        withCredentials: true,
+      });
+      setHabits(habits.filter((habit) => habit._id !== id));
+    } catch (error) {
+      console.error("Error deleting habit:", error);
+    }
   };
 
   const filteredTodos = todos.filter((todo) => {
@@ -302,8 +348,8 @@ const TodoApp = () => {
     <div className="todo-app-container">
       <header className="todo-header">
         <div className="container">
-          <h1 onClick={handleGoToLandingpage} className="icon-name">
-            Taskbit
+          <h1 className="icon-name">
+            Taskbit {!user && <span className="guest-badge">(Guest Mode)</span>}
           </h1>
 
           <button
@@ -453,7 +499,8 @@ const TodoApp = () => {
                   <ul className="habits-list">
                     {habits.map((habit) => {
                       const today = new Date().toISOString().split("T")[0];
-                      const isCompletedToday = habit.history[today];
+                      const isCompletedToday =
+                        habit.history && habit.history[today];
 
                       return (
                         <li key={habit._id} className="habit-item">
@@ -494,7 +541,12 @@ const TodoApp = () => {
         </div>
       </main>
 
-      <Sidebar openSidebar={sidebarOpen} setOpenSidebar={setSidebarOpen} />
+      <Sidebar
+        openSidebar={sidebarOpen}
+        setOpenSidebar={setSidebarOpen}
+        user={user}
+        setUser={setUser}
+      />
     </div>
   );
 };

@@ -91,6 +91,17 @@ export const verifyAuth = async () => {
     // Return the user data if authenticated
     return response.data.user;
   } catch (error) {
+    // Handle 401 (Unauthorized) silently as it's expected for guests
+    if (error.response?.status === 401) {
+      return { isAuthenticated: false };
+    }
+
+    // Log other unexpected errors
+    console.error(
+      "Auth verification error:",
+      error.response?.data?.message || error.message
+    );
+
     // Return an object indicating authentication failure
     return {
       isAuthenticated: false,

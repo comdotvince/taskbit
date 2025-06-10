@@ -348,3 +348,13 @@
     align-self: flex-end;
   }
 }
+
+.guest-badge {
+  font-size: 0.7rem;
+  background-color: #94a3b8;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  margin-left: 8px;
+  font-weight: 500;
+}

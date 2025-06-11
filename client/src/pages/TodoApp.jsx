@@ -344,6 +344,81 @@ const TodoApp = () => {
 
   const remainingCount = todos.filter((todo) => !todo.isCompleted).length;
 
+  // In TodoApp.jsx, add this function after your existing functions:
+
+  const refreshUserState = async () => {
+    console.log("Refreshing user state...");
+    const storedUser = localStorage.getItem("user");
+
+    if (storedUser) {
+      try {
+        const userData = JSON.parse(storedUser);
+        console.log("Setting user data:", userData);
+        setUser(userData);
+
+        // Update the header immediately to show logged-in state
+        console.log("User refreshed:", userData.name);
+
+        // Fetch user's backend data
+        try {
+          console.log("Fetching backend data for user:", userData.id);
+          const [todoRes, habitRes] = await Promise.all([
+            api.get("/todos", { withCredentials: true }),
+            api.get("/habits", { withCredentials: true }),
+          ]);
+
+          console.log("Backend todos:", todoRes.data);
+          console.log("Backend habits:", habitRes.data);
+
+          // Use backend data, or fall back to empty arrays if no data
+          setTodos(todoRes.data || []);
+          setHabits(habitRes.data || []);
+          console.log("Loaded backend data after login");
+        } catch (error) {
+          console.error("Failed to fetch user data after login:", error);
+
+          // If backend fails, start with empty arrays for authenticated user
+          console.log(
+            "Backend failed, starting with empty data for authenticated user"
+          );
+          setTodos([]);
+          setHabits([]);
+        }
+      } catch (error) {
+        console.error("Invalid user data:", error);
+        localStorage.removeItem("user");
+        setUser(null);
+      }
+    } else {
+      console.log("No user found in localStorage, staying in guest mode");
+      setUser(null);
+    }
+  };
+
+  // Update the useEffect to listen for storage changes
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      console.log("Storage change detected:", e.key, e.newValue);
+      if (e.key === "user") {
+        refreshUserState();
+      }
+    };
+
+    // Also listen for custom events (for same-tab changes)
+    const handleUserLogin = () => {
+      console.log("User login event received");
+      refreshUserState();
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("userLogin", handleUserLogin);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("userLogin", handleUserLogin);
+    };
+  }, []);
+
   return (
     <div className="todo-app-container">
       <header className="todo-header">

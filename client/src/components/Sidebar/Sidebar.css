@@ -160,6 +160,7 @@ nav li:hover {
 }
 
 .logout-button {
+  margin-bottom: 20px;
   width: 100%;
   padding: 12px;
   background-color: #e74c3c;
@@ -240,7 +241,8 @@ nav li:hover {
 
 /* Guest info section */
 .guest-info {
-  margin-top: auto;
+  margin: auto;
+  margin-bottom: 20px;
   padding: 15px;
   background-color: rgba(52, 152, 219, 0.1);
   border-radius: 8px;
